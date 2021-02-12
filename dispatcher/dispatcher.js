@@ -206,7 +206,7 @@ module.exports = function(config){
 			  "msgId": Math.round(Date.now() / 1000)  % 100000 ,
 			  "action": "appSend",
 			  "params": {
-			    "devTid": "ESP_2M_F4CFA2492863",
+			    "devTid": config.deviceId,
 			    "ctrlKey": config.ctrlKey,
 			    "appTid": "25fa78bd-d78c-4b30-9e54-b9669b72e832",
 			    "data": {
@@ -214,7 +214,8 @@ module.exports = function(config){
 			    }
 			  }
 			}) + "\n")
-		}, 10000);
+		}, config.updateInterval * 1000);
+
 
 		socket.on('data', (data) => {
 		  console.debug(data);

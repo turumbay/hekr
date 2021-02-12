@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "mqtt": "^4.2.6",
     "yaml": "^1.10.0"
   }
 }

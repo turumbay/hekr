@@ -9,6 +9,6 @@ const config = YAML.parse(file);
 const dispatcher = require('./dispatcher/dispatcher')(config);
 
 
-dispatcher.server.listen(config.servicePort, () => {
+dispatcher.server.listen(config.internalPort, () => {
   console.log('server bound');
 });
