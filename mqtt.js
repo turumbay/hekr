@@ -12,7 +12,7 @@ const client = mqtt.connect("mqtt://" + config.mqtt.host,{
 	clean:true
 })
 
-function publishConfig(){
+function publishConfig(deviceId){
 	client.publish("hekr/state", "online");
 	function sensorConfig(deviceClass, uom){
 		return {
@@ -23,31 +23,31 @@ function publishConfig(){
 		  ],
 		  "device": {
 		    "identifiers": [
-		      config.deviceId
+		      deviceId
 		    ],
 		    "manufacturer": "Wisen",
 		    "model": "Smart Meter",
-		    "name": config.deviceId,
+		    "name": deviceId,
 		    "sw_version": "HZ"
 		  },
 		  "device_class": deviceClass,
-		  "json_attributes_topic": "hekr/" + config.deviceId,
-		  "name": config.deviceId + "  " + deviceClass,
-		  "state_topic": "hekr/" + config.deviceId,
-		  "unique_id": "hekr/" + config.deviceId + "_" + deviceClass,
+		  "json_attributes_topic": "hekr/" + deviceId,
+		  "name": deviceId + "  " + deviceClass,
+		  "state_topic": "hekr/" + deviceId,
+		  "unique_id": "hekr/" + deviceId + "_" + deviceClass,
 		  "unit_of_measurement": uom,
 		  "value_template": "{{ value_json." + deviceClass + " }}"
 		}
 	}
-	client.publish("homeassistant/sensor/" + config.deviceId + "/voltage/config", JSON.stringify(sensorConfig("voltage", "V")));
-	client.publish("homeassistant/sensor/" + config.deviceId + "/power/config", JSON.stringify(sensorConfig("power", "kW")));
-	client.publish("homeassistant/sensor/" + config.deviceId + "/current/config", JSON.stringify(sensorConfig("current", "A")));		
-	client.publish("homeassistant/sensor/" + config.deviceId + "/energy/config", JSON.stringify(sensorConfig("energy", "kWh")));		
+	client.publish("homeassistant/sensor/" + deviceId + "/voltage/config", JSON.stringify(sensorConfig("voltage", "V")));
+	client.publish("homeassistant/sensor/" + deviceId + "/power/config", JSON.stringify(sensorConfig("power", "kW")));
+	client.publish("homeassistant/sensor/" + deviceId + "/current/config", JSON.stringify(sensorConfig("current", "A")));		
+	client.publish("homeassistant/sensor/" + deviceId + "/energy/config", JSON.stringify(sensorConfig("energy", "kWh")));		
 
 }
 
-function publishVoltage(data){
-	client.publish("hekr/" + config.deviceId, JSON.stringify({
+function publishVoltage(deviceId, data){
+	client.publish("hekr/" + deviceId, JSON.stringify({
 		"voltage": Math.round(data.voltage_1 * 10) / 10, 
 		"power": Math.round(data.total_active_power*100)/100,
 		"current": Math.round(data.current_1 * 10) / 10,
@@ -58,8 +58,10 @@ function publishVoltage(data){
 
 
 module.exports = function() {
+	for (deviceId in config.devices){
+		publishConfig(deviceId)
+	}
 	return {
-		"publishVoltage": publishVoltage,
-		"publishConfig": publishConfig
+		"publishVoltage": publishVoltage
 	}
 }

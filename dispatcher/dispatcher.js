@@ -51,11 +51,11 @@ function onDevLogin(data, config) {
 	  "params": {
 	    "devTid": data.params.devTid,
 	    "token": null,
-	    "ctrlKey": config.ctrlKey,
-	    "bindKey": config.bindKey,
+	    "ctrlKey": config[data.params.devTid].ctrlKey,
+	    "bindKey": config[data.params.devTid].bindKey,
 	    "forceBind": false,
 	    "bind": true,
-	    "license": config.license
+	    "license": config[data.params.devTid].license
 	  }
 	})
 }
@@ -125,9 +125,6 @@ function onGetTimerList(data){
 }
 
 var onDevSend = function(mqtt){
-	console.log(mqtt);
-	mqtt.publishConfig();
-
 	return function(data){
 		/*{
 		  "msgId": 18486,
@@ -143,7 +140,7 @@ var onDevSend = function(mqtt){
 		if (data.params.data.raw.length == 134){
 			const details = parseDevSend(data.params.data.raw);
 			console.log(details);
-			mqtt.publishVoltage(details)
+			mqtt.publishVoltage(data.params.devTid, details)
 		}
 		return ok(data)
 	}
@@ -211,20 +208,7 @@ module.exports = function(config, mqtt){
 
 		console.log('client connected');
 
-		let scheduler = setInterval(() => {
-			socket.write(JSON.stringify({
-			  "msgId": Math.round(Date.now() / 1000)  % 100000 ,
-			  "action": "appSend",
-			  "params": {
-			    "devTid": config.deviceId,
-			    "ctrlKey": config.ctrlKey,
-			    "appTid": "25fa78bd-d78c-4b30-9e54-b9669b72e832",
-			    "data": {
-			      "raw": "480602350a8f"
-			    }
-			  }
-			}) + "\n")
-		}, config.updateInterval * 1000);
+		let scheduler = 0;
 
 
 		const router = {
@@ -243,6 +227,23 @@ module.exports = function(config, mqtt){
 
 		  let msgObj = JSON.parse(data);
 		  const action = msgObj.action;
+
+		  if (action == "getProdInfo"){
+			scheduler = setInterval(() => {
+						socket.write(JSON.stringify({
+						  "msgId": Math.round(Date.now() / 1000)  % 100000 ,
+						  "action": "appSend",
+						  "params": {
+						    "devTid": config.deviceId,
+						    "ctrlKey": config.ctrlKey,
+						    "appTid": "25fa78bd-d78c-4b30-9e54-b9669b72e832",
+						    "data": {
+						      "raw": "480602350a8f"
+						    }
+						  }
+						}) + "\n")
+					}, config.updateInterval * 1000);
+		  }
 		  var response = "";
 		  if (router.hasOwnProperty(action)) {
 		  	response = router[action](msgObj, config)
