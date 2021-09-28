@@ -40,7 +40,8 @@ function publishConfig(deviceId){
 		}
 	}
 	client.publish("homeassistant/sensor/" + deviceId + "/voltage/config", JSON.stringify(sensorConfig("voltage", "V")));
-	client.publish("homeassistant/sensor/" + deviceId + "/power/config", JSON.stringify(sensorConfig("power", "kW")));
+	client.publish("homeassistant/sensor/" + deviceId + "/active_power/config", JSON.stringify(sensorConfig("power", "kW")));
+	client.publish("homeassistant/sensor/" + deviceId + "/reactive_power/config", JSON.stringify(sensorConfig("power", "kW")));	
 	client.publish("homeassistant/sensor/" + deviceId + "/current/config", JSON.stringify(sensorConfig("current", "A")));		
 	client.publish("homeassistant/sensor/" + deviceId + "/energy/config", JSON.stringify(sensorConfig("energy", "kWh")));		
 
@@ -49,7 +50,8 @@ function publishConfig(deviceId){
 function publishVoltage(deviceId, data){
 	client.publish("hekr/" + deviceId, JSON.stringify({
 		"voltage": Math.round(data.voltage_1 * 10) / 10, 
-		"power": Math.round(data.total_active_power*100)/100,
+		"active_power": Math.round(data.total_active_power*100)/100,
+		"reactive_power": Math.round(data.total_reactive_power*100)/100,		
 		"current": Math.round(data.current_1 * 10) / 10,
 		"energy": Math.round(data.total_energy_consumed * 10) / 10 
 	}));

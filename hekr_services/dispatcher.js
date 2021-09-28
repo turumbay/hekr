@@ -3,11 +3,7 @@ const assert = require('assert/strict');
 // https://docs.hekr.me/v4/%E4%BA%91%E7%AB%AFAPI/%E8%AE%BE%E5%A4%87%E9%80%9A%E4%BF%A1/
 
 
-
-
-function getDeviceId(msgObj){
-	return msgObj.params.devTid;
-}
+let getDeviceId = msgObj => msgObj.params.devTid;
 
 
 function onDevLogin(data, config) {
