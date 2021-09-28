@@ -124,22 +124,32 @@ function onGetTimerList(data){
 	})
 }
 
-function onDevSend(data){
-	/*{
-	  "msgId": 18486,
-	  "action": "devSend",
-	  "params": {
-	    "devTid": "ESP_2M_F4CFA2492863",
-	    "appTid": [],
-	    "data": {
-	      "raw": "484301010B001FC9000000000000096800000000000000000000000000000000004C93004C9300000000000003E803E80000000013870000510F0000510F00000000DF"
-	    }
-	  }
-	}*/	
-	console.log(data.params.data.raw);
-	console.log(parseDevSend(data.params.data.raw));
-	return ok(data)
+var onDevSend = function(mqtt){
+	console.log(mqtt);
+	mqtt.publishConfig();
+
+	return function(data){
+		/*{
+		  "msgId": 18486,
+		  "action": "devSend",
+		  "params": {
+		    "devTid": "ESP_2M_F4CFA2492863",
+		    "appTid": [],
+		    "data": {
+		      "raw": "484301010B001FC9000000000000096800000000000000000000000000000000004C93004C9300000000000003E803E80000000013870000510F0000510F00000000DF"
+		    }
+		  }
+		}*/	
+		if (data.params.data.raw.length == 134){
+			const details = parseDevSend(data.params.data.raw);
+			console.log(details);
+			mqtt.publishVoltage(details)
+		}
+		return ok(data)
+	}
 }
+
+
 
 function onHeartbeat(data){
 	/*{
@@ -191,7 +201,7 @@ function parseDevSend(rawData){
 }
 
 
-module.exports = function(config){
+module.exports = function(config, mqtt){
 	console.log(config);
 
 	const net = require('net');
@@ -217,17 +227,19 @@ module.exports = function(config){
 		}, config.updateInterval * 1000);
 
 
+		const router = {
+			'getProdInfo': onGetProdInfo,
+			'devLogin': onDevLogin,
+			'reportDevInfo': onReportDevInfo,
+			'getTimerList': onGetTimerList,
+			'heartbeat': onHeartbeat,
+			'devSend': onDevSend(mqtt)
+		}
+
 		socket.on('data', (data) => {
 		  console.debug(data);
 
-		  var router = {
-		  	'getProdInfo': onGetProdInfo,
-		  	'devLogin': onDevLogin,
-		  	'reportDevInfo': onReportDevInfo,
-		  	'getTimerList': onGetTimerList,
-		  	'heartbeat': onHeartbeat,
-		  	'devSend': onDevSend
-		  }
+
 
 		  let msgObj = JSON.parse(data);
 		  const action = msgObj.action;
