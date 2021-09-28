@@ -6,10 +6,25 @@ const YAML = require('yaml');
 const file = fs.readFileSync('./config.yaml', 'utf8');
 const config = YAML.parse(file);
 
-const mqtt = require('./mqtt')();
-const dispatcher = require('./dispatcher/dispatcher')(config, mqtt);
 
 
-dispatcher.server.listen(config.internalPort, () => {
-  console.log('server bound');
+const balancer = require('./hekr_services/balancer')(config)
+balancer.listen(config.balancerPort || 9092, () => {
+  console.log('balancer bound');
 });
+balancer.on('error', (err) => {
+  throw err;
+});
+
+
+const mqtt = require('./mqtt')();
+const dispatcher = require('./hekr_services/dispatcher')(config, mqtt);
+
+dispatcher.listen(config.dispatcherPort || 9091 , () => {
+  console.log('dispatcher bound');
+});
+
+dispatcher.on('error', (err) => {
+  throw err;
+});
+

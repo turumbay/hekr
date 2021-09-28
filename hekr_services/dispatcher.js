@@ -1,37 +1,14 @@
+const assert = require('assert/strict');
+
 // https://docs.hekr.me/v4/%E4%BA%91%E7%AB%AFAPI/%E8%AE%BE%E5%A4%87%E9%80%9A%E4%BF%A1/
 
-function onGetProdInfo(data, config){
-	/*{
-		"msgId": 18747,
-		"action": "getProdInfo",
-		"params": {
-		"devTid": "ESP_2M_F4CFA2492863",
-		"prodKey": "ccdfab3420b5f0320674f34657882e9e",
-		"supportSSL": 1
-	}}*/
-	return JSON.stringify({
-		"msgId": data.msgId,
-		"dcInfo": {
-			"dc": config.dc,
-			"area": config.area,
-			"domain": config.domain,
-			"fromArea": config.area,
-			"fromDC": config.dc
-		},
-		"action": "getProdInfoResp",
-		"code": 200,
-		"desc": "success",
-		"params": {
-			"mid": "xxx-mid",
-			"workMode": 0,
-			"tokenType": 2,
-			"serviceHost": config.serviceHost,
-			"servicePort": config.servicePort,
-			"encryptType": "None",
-			"connectType": "tcp"
-		}});
 
+
+
+function getDeviceId(msgObj){
+	return msgObj.params.devTid;
 }
+
 
 function onDevLogin(data, config) {
 	/*{
@@ -42,31 +19,32 @@ function onDevLogin(data, config) {
 	    "devTid": "ESP_2M_F4CFA2492863",
 	    "prodKey": "ccdfab3420b5f0320674f34657882e9e"
 	  }
-	}*/	
+	}*/
+	let deviceId = getDeviceId(data);
 	return JSON.stringify({
-	  "msgId": data.msgId,
-	  "action": "devLoginResp",
-	  "code": 200,
-	  "desc": "success",
-	  "params": {
-	    "devTid": data.params.devTid,
-	    "token": null,
-	    "ctrlKey": config[data.params.devTid].ctrlKey,
-	    "bindKey": config[data.params.devTid].bindKey,
-	    "forceBind": false,
-	    "bind": true,
-	    "license": config[data.params.devTid].license
-	  }
+		"msgId": data.msgId,
+		"action": "devLoginResp",
+		"code": 200,
+		"desc": "success",
+		"params": {
+			"devTid": deviceId,
+			"token": null,
+			"ctrlKey": config.devices[deviceId].ctrlKey,
+			"bindKey": config.devices[deviceId].bindKey,
+			"forceBind": false,
+			"bind": true,
+			"license": config.devices[deviceId].license
+		}
 	})
 }
 
 
 function ok(data){
 	return JSON.stringify({
-	  "msgId": data.msgId,
-	  "action": data.action + "Resp",
-	  "code": 200,
-	  "desc": "success"
+		"msgId": data.msgId,
+		"action": data.action + "Resp",
+		"code": 200,
+		"desc": "success"
 	});
 }
 
@@ -113,14 +91,14 @@ function onGetTimerList(data){
 	  }
 	}*/	
 	return JSON.stringify({
-	  "msgId": data.msgId,
-	  "action": "getTimerListResp",
-	  "code": 200,
-	  "desc": "success",
-	  "params": {
-	    "tasksCount": 0,
-	    "taskList": []
-	  }
+		"msgId": data.msgId,
+		"action": "getTimerListResp",
+		"code": 200,
+		"desc": "success",
+		"params": {
+			"tasksCount": 0,
+			"taskList": []
+		}
 	})
 }
 
@@ -139,8 +117,8 @@ var onDevSend = function(mqtt){
 		}*/	
 		if (data.params.data.raw.length == 134){
 			const details = parseDevSend(data.params.data.raw);
-			console.log(details);
-			mqtt.publishVoltage(data.params.devTid, details)
+			console.debug(details);
+			mqtt.publishVoltage(getDeviceId(data), details)
 		}
 		return ok(data)
 	}
@@ -168,7 +146,6 @@ function parseDevSend(rawData){
 		pos += n;
 		return result
 	}
-	
 
 	return {
 		hz: next(10, 1),
@@ -198,74 +175,67 @@ function parseDevSend(rawData){
 }
 
 
-module.exports = function(config, mqtt){
-	console.log(config);
 
+module.exports = function(config, mqtt){
 	const net = require('net');
 
-	const server = net.createServer((socket) => {
+	const dispatcher = net.createServer((socket) => {
+		console.debug('client connected to dispatcher');
+
 		socket.setEncoding('utf8');
 
-		console.log('client connected');
-
 		let scheduler = 0;
+		socket.once('data', (data) => {
+			let msgObj = JSON.parse(data);
+			assert.equal(msgObj.action, "devLogin", `Initial message to dispatcher should be <devLogin>, but received <${msgObj.action}>`);
 
+			let deviceId = getDeviceId(msgObj);
 
-		const router = {
-			'getProdInfo': onGetProdInfo,
-			'devLogin': onDevLogin,
-			'reportDevInfo': onReportDevInfo,
-			'getTimerList': onGetTimerList,
-			'heartbeat': onHeartbeat,
-			'devSend': onDevSend(mqtt)
-		}
+			function appSendRequest(){
+				socket.write(JSON.stringify({
+					"msgId": Math.round(Date.now() / 1000)  % 100000 ,
+					"action": "appSend",
+					"params": {
+						"devTid": deviceId,
+						"ctrlKey": config.devices[deviceId].ctrlKey,
+						"appTid": "25fa78bd-d78c-4b30-9e54-b9669b72e832",
+						"data": {
+							"raw": "480602350a8f"
+						}
+					}
+				}) + "\n")
+			}
+			scheduler = setInterval(appSendRequest, config.updateInterval * 1000);				
+			
+		})
+
 
 		socket.on('data', (data) => {
-		  console.debug(data);
+			console.debug("Dispatcher received request", data);
+			const router = {
+				'devLogin': onDevLogin,
+				'reportDevInfo': onReportDevInfo,
+				'getTimerList': onGetTimerList,
+				'heartbeat': onHeartbeat,
+				'devSend': onDevSend(mqtt)
+			}
 
-
-
-		  let msgObj = JSON.parse(data);
-		  const action = msgObj.action;
-
-		  if (action == "getProdInfo"){
-			scheduler = setInterval(() => {
-						socket.write(JSON.stringify({
-						  "msgId": Math.round(Date.now() / 1000)  % 100000 ,
-						  "action": "appSend",
-						  "params": {
-						    "devTid": config.deviceId,
-						    "ctrlKey": config.ctrlKey,
-						    "appTid": "25fa78bd-d78c-4b30-9e54-b9669b72e832",
-						    "data": {
-						      "raw": "480602350a8f"
-						    }
-						  }
-						}) + "\n")
-					}, config.updateInterval * 1000);
-		  }
-		  var response = "";
-		  if (router.hasOwnProperty(action)) {
-		  	response = router[action](msgObj, config)
-		  }
-		  socket.write(response); 
-		  socket.write("\n");
-
+			let msgObj = JSON.parse(data);
+			var response = "";
+			if (router.hasOwnProperty(msgObj.action)) {
+				response = router[msgObj.action](msgObj, config)
+			}
+			socket.write(response); 
+			socket.write("\n");
 		});
 
 		socket.on('end', () => {
-			clearInterval(scheduler);
-		    console.log('client disconnected');
+			if (scheduler > 0){ 
+				clearInterval(scheduler) 
+			};
+			console.debug('client disconnected from dispatcher');
 		});
-
-
-
 	});
 
-
-	server.on('error', (err) => {
-	  throw err;
-	});
-
-	return {server};	
+	return dispatcher;	
 } ;

@@ -16,27 +16,27 @@ function publishConfig(deviceId){
 	client.publish("hekr/state", "online");
 	function sensorConfig(deviceClass, uom){
 		return {
-		  "availability": [
-		    {
-		      "topic": "hekr/state"
-		    }
-		  ],
-		  "device": {
-		    "identifiers": [
-		      deviceId
-		    ],
-		    "manufacturer": "Wisen",
-		    "model": "Smart Meter",
-		    "name": deviceId,
-		    "sw_version": "HZ"
-		  },
-		  "device_class": deviceClass,
-		  "json_attributes_topic": "hekr/" + deviceId,
-		  "name": deviceId + "  " + deviceClass,
-		  "state_topic": "hekr/" + deviceId,
-		  "unique_id": "hekr/" + deviceId + "_" + deviceClass,
-		  "unit_of_measurement": uom,
-		  "value_template": "{{ value_json." + deviceClass + " }}"
+			"availability": [
+			{
+				"topic": "hekr/state"
+			}
+			],
+			"device": {
+				"identifiers": [
+				deviceId
+				],
+				"manufacturer": "Wisen",
+				"model": "Smart Meter",
+				"name": deviceId,
+				"sw_version": "HZ"
+			},
+			"device_class": deviceClass,
+			"json_attributes_topic": "hekr/" + deviceId,
+			"name": deviceId + "  " + deviceClass,
+			"state_topic": "hekr/" + deviceId,
+			"unique_id": "hekr/" + deviceId + "_" + deviceClass,
+			"unit_of_measurement": uom,
+			"value_template": "{{ value_json." + deviceClass + " }}"
 		}
 	}
 	client.publish("homeassistant/sensor/" + deviceId + "/voltage/config", JSON.stringify(sensorConfig("voltage", "V")));
