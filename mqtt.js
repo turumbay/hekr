@@ -14,7 +14,7 @@ const client = mqtt.connect("mqtt://" + config.mqtt.host,{
 
 function publishConfig(deviceId){
 	client.publish("hekr/state", "online");
-	function sensorConfig(deviceClass, uom){
+	function sensorConfig(deviceClass, uom, deviceName){
 		return {
 			"availability": [
 			{
@@ -32,18 +32,18 @@ function publishConfig(deviceId){
 			},
 			"device_class": deviceClass,
 			"json_attributes_topic": "hekr/" + deviceId,
-			"name": deviceId + "  " + deviceClass,
+			"name": deviceId + "  " + deviceName,
 			"state_topic": "hekr/" + deviceId,
-			"unique_id": "hekr/" + deviceId + "_" + deviceClass,
+			"unique_id": "hekr/" + deviceId + "_" + deviceName,
 			"unit_of_measurement": uom,
-			"value_template": "{{ value_json." + deviceClass + " }}"
+			"value_template": "{{ value_json." + deviceName + " }}"
 		}
 	}
-	client.publish("homeassistant/sensor/" + deviceId + "/voltage/config", JSON.stringify(sensorConfig("voltage", "V")));
-	client.publish("homeassistant/sensor/" + deviceId + "/active_power/config", JSON.stringify(sensorConfig("power", "kW")));
-	client.publish("homeassistant/sensor/" + deviceId + "/reactive_power/config", JSON.stringify(sensorConfig("power", "kW")));	
-	client.publish("homeassistant/sensor/" + deviceId + "/current/config", JSON.stringify(sensorConfig("current", "A")));		
-	client.publish("homeassistant/sensor/" + deviceId + "/energy/config", JSON.stringify(sensorConfig("energy", "kWh")));		
+	client.publish("homeassistant/sensor/" + deviceId + "/voltage/config", JSON.stringify(sensorConfig("voltage", "V", "voltage")));
+	client.publish("homeassistant/sensor/" + deviceId + "/active_power/config", JSON.stringify(sensorConfig("power", "kW", "active_power")));
+	client.publish("homeassistant/sensor/" + deviceId + "/reactive_power/config", JSON.stringify(sensorConfig("power", "kW", "reactive_power")));	
+	client.publish("homeassistant/sensor/" + deviceId + "/current/config", JSON.stringify(sensorConfig("current", "A", "current")));		
+	client.publish("homeassistant/sensor/" + deviceId + "/energy/config", JSON.stringify(sensorConfig("energy", "kWh", "energy")));		
 
 }
 
