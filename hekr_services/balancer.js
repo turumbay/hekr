@@ -14,6 +14,12 @@ module.exports = function(config){
 			console.debug('client disconnected from balancer');
 		});		
 
+
+		socket.on('error', (err) => {
+			console.error("Error occurred in balancer: ", err)
+		});		
+
+
 		socket.on('data', (data) => {
 				/*{
 					"msgId": 18747,

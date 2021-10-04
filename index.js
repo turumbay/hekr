@@ -13,7 +13,8 @@ balancer.listen(config.balancerPort || 9092, () => {
   console.log('balancer bound');
 });
 balancer.on('error', (err) => {
-  throw err;
+  console.error("Something goes wrong in balancer", err)
+  //throw err;
 });
 
 
@@ -25,6 +26,7 @@ dispatcher.listen(config.dispatcherPort || 9091 , () => {
 });
 
 dispatcher.on('error', (err) => {
-  throw err;
+  console.error("Something goes wrong in dispatcher", err)
+  //throw err;
 });
 

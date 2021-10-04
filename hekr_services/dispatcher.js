@@ -231,6 +231,11 @@ module.exports = function(config, mqtt){
 			};
 			console.debug('client disconnected from dispatcher');
 		});
+
+		socket.on('error', (err) => {
+			console.error("Error occurred in dispatcher: ", err)
+		});		
+
 	});
 
 	return dispatcher;	
