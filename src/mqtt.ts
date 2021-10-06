@@ -36,6 +36,7 @@ export class MqttHassPublisher{
 
 
 	public publishVoltage(data:HekrMeterData){
+		console.debug("Publishing data to mqtt", data);
 		this.client.publish("hekr/" + data.device_id, JSON.stringify({
 			"voltage": Math.round(data.voltage * 10) / 10, 
 			"active_power": Math.round(data.total_active_power*100)/100,
@@ -46,6 +47,7 @@ export class MqttHassPublisher{
 	}
 
 	public publishConfig(deviceId:string){
+		console.debug("Publishing config to mqtt", deviceId);
 		this.client.publish("hekr/state", "online");
 		function sensorConfig(deviceClass:string, uom:string, deviceName:string){
 			return {
