@@ -138,7 +138,7 @@ function parseDevSend(rawData){
 	let pos = 0;
 
 	const next = function(n, factor){
-		result = parseInt('0x' + rawData.substr(pos, n)) * factor;
+		let result = parseInt('0x' + rawData.substr(pos, n)) * factor;
 
 		pos += n;
 		return result
