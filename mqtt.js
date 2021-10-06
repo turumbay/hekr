@@ -58,12 +58,8 @@ function publishVoltage(deviceId, data){
 
 }
 
-
-export default function() {
-	for (deviceId in config.devices){
-		publishConfig(deviceId)
-	}
-	return {
-		"publishVoltage": publishVoltage
-	}
+for (deviceId in config.devices){
+	publishConfig(deviceId)
 }
+
+export default {publishVoltage}
