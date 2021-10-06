@@ -1,9 +1,9 @@
-const assert = require('assert/strict');
+import assert from 'assert/strict';
+import net from 'net'
 
 // https://docs.hekr.me/v4/%E4%BA%91%E7%AB%AFAPI/%E8%AE%BE%E5%A4%87%E9%80%9A%E4%BF%A1/
 
-module.exports = function(config){
-	const net = require('net');
+function createBalancer(config){
 
 	const balancer = net.createServer((socket) => {
 		console.debug('client connected to balancer...');
@@ -59,3 +59,5 @@ module.exports = function(config){
 
 	return balancer;
 }
+
+export default {createBalancer}

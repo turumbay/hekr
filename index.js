@@ -1,32 +1,29 @@
-const net = require('net');
-const fs = require('fs');
-const YAML = require('yaml');
+import fs from 'fs';
+import yaml from 'yaml';
 
+const config = (function(){
+  const file = fs.readFileSync('./config.yaml', 'utf8');
+  return yaml.parse(file);
+})();
 
-const file = fs.readFileSync('./config.yaml', 'utf8');
-const config = YAML.parse(file);
+import hekr from './hekr_services/index.js'
+import mqtt from './mqtt.js'
 
-
-
-const balancer = require('./hekr_services/balancer')(config)
+const balancer = hekr.createBalancer(config)
 balancer.listen(config.balancerPort || 9092, () => {
   console.log('balancer bound');
 });
 balancer.on('error', (err) => {
-  console.error("Something goes wrong in balancer", err)
-  //throw err;
+  console.error("Something goes wrong in balancer", err);
 });
 
 
-const mqtt = require('./mqtt')();
-const dispatcher = require('./hekr_services/dispatcher')(config, mqtt);
-
+const dispatcher = hekr.createDispatcher(config, mqtt);
 dispatcher.listen(config.dispatcherPort || 9091 , () => {
   console.log('dispatcher bound');
 });
 
 dispatcher.on('error', (err) => {
-  console.error("Something goes wrong in dispatcher", err)
-  //throw err;
+  console.error("Something goes wrong in dispatcher", err);
 });
 

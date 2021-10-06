@@ -1,11 +1,11 @@
-const fs = require('fs');
-const YAML = require('yaml');
-const file = fs.readFileSync('./config.yaml', 'utf8');
-const config = YAML.parse(file);
+import { readFileSync } from 'fs';
+import yaml from 'yaml';
+const file = readFileSync('./config.yaml', 'utf8');
+const config = yaml.parse(file);
 
-const mqtt = require('mqtt')
+import { connect } from 'mqtt';
 
-const client = mqtt.connect("mqtt://" + config.mqtt.host,{
+const client = connect("mqtt://" + config.mqtt.host,{
 	clientId:"hekr-mqtt",
 	username: config.mqtt.username,
 	password: config.mqtt.password,
@@ -59,7 +59,7 @@ function publishVoltage(deviceId, data){
 }
 
 
-module.exports = function() {
+export default function() {
 	for (deviceId in config.devices){
 		publishConfig(deviceId)
 	}
