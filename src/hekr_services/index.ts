@@ -1,5 +1,5 @@
-import dispatcher from './dispatcher.js'
-import balancer from './balancer.js'
+import dispatcher from './dispatcher'
+import balancer from './balancer'
 
 const createBalancer = balancer.createBalancer
 const createDispatcher = dispatcher.createDispatcher

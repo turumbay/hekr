@@ -3,7 +3,7 @@ import net from 'net'
 
 // https://docs.hekr.me/v4/%E4%BA%91%E7%AB%AFAPI/%E8%AE%BE%E5%A4%87%E9%80%9A%E4%BF%A1/
 
-function createBalancer(config){
+function createBalancer(config:any){ //TODO: remove "any" 
 
 	const balancer = net.createServer((socket) => {
 		console.debug('client connected to balancer...');
@@ -30,7 +30,7 @@ function createBalancer(config){
 					"supportSSL": 1
 				}}*/
 				console.debug("Balancer received request", data);
-				let msgObj = JSON.parse(data);
+				let msgObj = JSON.parse(data.toString());
 				assert.equal(msgObj.action, "getProdInfo", `Only <getProdInfo> message allowed, but received <${msgObj.action}>`);
 
 				socket.write(JSON.stringify({

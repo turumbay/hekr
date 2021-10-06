@@ -12,9 +12,9 @@ const client = connect("mqtt://" + config.mqtt.host,{
 	clean:true
 })
 
-function publishConfig(deviceId){
+function publishConfig(deviceId:string){
 	client.publish("hekr/state", "online");
-	function sensorConfig(deviceClass, uom, deviceName){
+	function sensorConfig(deviceClass:string, uom:string, deviceName:string){
 		return {
 			"availability": [
 			{
@@ -47,7 +47,15 @@ function publishConfig(deviceId){
 
 }
 
-function publishVoltage(deviceId, data){
+interface HekrData{
+	voltage_1: number,
+	total_active_power: number,
+	total_reactive_power: number,
+	current_1: number,
+	total_energy_consumed: number
+}
+
+function publishVoltage(deviceId:string, data:HekrData){
 	client.publish("hekr/" + deviceId, JSON.stringify({
 		"voltage": Math.round(data.voltage_1 * 10) / 10, 
 		"active_power": Math.round(data.total_active_power*100)/100,

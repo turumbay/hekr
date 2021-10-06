@@ -3,11 +3,15 @@ import net from 'net'
 
 // https://docs.hekr.me/v4/%E4%BA%91%E7%AB%AFAPI/%E8%AE%BE%E5%A4%87%E9%80%9A%E4%BF%A1/
 
+interface HekrMessage{
+	msgId: number,
+	action: string,
+	params: any
+}
+let getDeviceId = (msgObj:HekrMessage) => msgObj.params.devTid;
 
-let getDeviceId = msgObj => msgObj.params.devTid;
 
-
-function onDevLogin(data, config) {
+function onDevLogin(data:HekrMessage, config: any) {
 	/*{
 	  "msgId": 0,
 	  "action": "devLogin",
@@ -36,10 +40,7 @@ function onDevLogin(data, config) {
 }
 
 
-/**
- * @param {{ msgId: any; action: string; }} data
- */
-function ok(data){
+function ok(data:HekrMessage){
 	return JSON.stringify({
 		"msgId": data.msgId,
 		"action": data.action + "Resp",
@@ -48,7 +49,7 @@ function ok(data){
 	});
 }
 
-function onReportDevInfo(data){	
+function onReportDevInfo(data:HekrMessage){	
 	/*{
 	  "msgId": 18453,
 	  "action": "reportDevInfo",
@@ -80,7 +81,7 @@ function onReportDevInfo(data){
 	return ok(data)
 }
 
-function onGetTimerList(data){
+function onGetTimerList(data:HekrMessage){
 	/*{
 	  "msgId": 18485,
 	  "action": "getTimerList",
@@ -102,8 +103,8 @@ function onGetTimerList(data){
 	})
 }
 
-var onDevSend = function(mqtt){
-	return function(data){
+var onDevSend = function(mqtt:any){
+	return function(data:HekrMessage){
 		/*{
 		  "msgId": 18486,
 		  "action": "devSend",
@@ -126,7 +127,7 @@ var onDevSend = function(mqtt){
 
 
 
-function onHeartbeat(data){
+function onHeartbeat(data:HekrMessage){
 	/*{
 	  "msgId": 18513,
 	  "action": "heartbeat",
@@ -136,11 +137,11 @@ function onHeartbeat(data){
 }
 
 
-function parseDevSend(rawData){
+function parseDevSend(rawData:string){
 
 	let pos = 0;
 
-	const next = function(n, factor){
+	const next = function(n:number, factor:number){
 		let result = parseInt('0x' + rawData.substr(pos, n)) * factor;
 
 		pos += n;
@@ -176,13 +177,13 @@ function parseDevSend(rawData){
 
 
 
-function createDispatcher(config, mqtt){
+function createDispatcher(config:any, mqtt:any){
 	const dispatcher = net.createServer((socket) => {
 		console.debug('client connected to dispatcher');
 
 		socket.setEncoding('utf8');
 
-		var scheduler;
+		var scheduler:NodeJS.Timer;
 		socket.once('data', (data) => {
 			let msgObj = JSON.parse(data.toString());
 			assert.equal(msgObj.action, "devLogin", `Initial message to dispatcher should be <devLogin>, but received <${msgObj.action}>`);
@@ -210,19 +211,22 @@ function createDispatcher(config, mqtt){
 
 		socket.on('data', (data) => {
 			console.debug("Dispatcher received request", data);
-			const router = {
-				'devLogin': onDevLogin,
-				'reportDevInfo': onReportDevInfo,
-				'getTimerList': onGetTimerList,
-				'heartbeat': onHeartbeat,
-				'devSend': onDevSend(mqtt)
-			}
 
 			let msgObj = JSON.parse(data.toString());
 			var response = "";
-			if (router.hasOwnProperty(msgObj.action)) {
-				response = router[msgObj.action](msgObj, config)
+			
+			if (msgObj.action == "devLogin"){
+				response = onDevLogin(msgObj, config)
+			}else if (msgObj.action == "reportDevInfo"){
+				response = onReportDevInfo(msgObj)
+			}else if (msgObj.action == "getTimerList"){
+				response = onGetTimerList(msgObj)
+			}else if (msgObj.action == "heartbeat"){
+				response = onHeartbeat(msgObj)
+			}else if (msgObj.action == "devSend"){
+				response = onDevSend(mqtt)(msgObj)
 			}
+
 			socket.write(response); 
 			socket.write("\n");
 		});

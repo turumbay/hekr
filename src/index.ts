@@ -1,13 +1,13 @@
-import fs from 'fs';
-import yaml from 'yaml';
+import * as fs from 'fs';
+import * as yaml from 'yaml';
 
 const config = (function(){
   const file = fs.readFileSync('./config.yaml', 'utf8');
   return yaml.parse(file);
 })();
 
-import hekr from './hekr_services/index.js'
-import mqtt from './mqtt.js'
+import hekr from './hekr_services/index'
+import mqtt from './mqtt'
 
 const balancer = hekr.createBalancer(config)
 balancer.listen(config.balancerPort || 9092, () => {
