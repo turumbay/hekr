@@ -14,7 +14,9 @@ export interface MqttConfig{
 }
 
 export class MqttHassPublisher{
-	private client: MqttClient
+
+	protected client: MqttClient
+	
 	constructor(config:MqttConfig){
 		this.client = connect("mqtt://" + config.mqtt.host,{
 			clientId:"hekr-mqtt",
