@@ -9,8 +9,7 @@ export interface MqttConfig{
 		host: string
 		username: string
 		password: string
-	},
-	meters: Array<any>		
+	}
 }
 
 export class MqttHassPublisher{
@@ -33,9 +32,6 @@ export class MqttHassPublisher{
 		this.client.on('error', (err) => {
 			console.error("mqqt client error", err)
 		})
-		for (let deviceId in config.meters){
-			this.publishConfig(deviceId)
-		}
 	}
 
 
@@ -49,7 +45,7 @@ export class MqttHassPublisher{
 		}));
 	}
 
-	private publishConfig(deviceId:string){
+	public publishConfig(deviceId:string){
 		this.client.publish("hekr/state", "online");
 		function sensorConfig(deviceClass:string, uom:string, deviceName:string){
 			return {

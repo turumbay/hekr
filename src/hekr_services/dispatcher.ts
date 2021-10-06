@@ -14,35 +14,6 @@ interface HekrMessage{
 let getDeviceId = (msgObj:HekrMessage) => msgObj.params.devTid;
 
 
-function onDevLogin(data:HekrMessage, config: any) {
-	/*{
-	  "msgId": 0,
-	  "action": "devLogin",
-	  "params": {
-	    "license": "30bc52f9c8fc4eada019bfffb956226c",
-	    "devTid": "ESP_2M_F4CFA2492863",
-	    "prodKey": "ccdfab3420b5f0320674f34657882e9e"
-	  }
-	}*/
-	let deviceId = getDeviceId(data);
-	return JSON.stringify({
-		"msgId": data.msgId,
-		"action": "devLoginResp",
-		"code": 200,
-		"desc": "success",
-		"params": {
-			"devTid": deviceId,
-			"token": null,
-			"ctrlKey": config.meters[deviceId].ctrlKey,
-			"bindKey": config.meters[deviceId].bindKey,
-			"forceBind": false,
-			"bind": true,
-			"license": config.meters[deviceId].license
-		}
-	})
-}
-
-
 function ok(data:HekrMessage){
 	return JSON.stringify({
 		"msgId": data.msgId,
@@ -166,6 +137,7 @@ export interface HekrMeterData{
 
 declare interface HekrDispatcher{
 	on(event: 'data', listener: (data: HekrMeterData) => void): this;	
+	on(event: 'deviceConnected', listener: (device_id: string) => void): this;	
 	//on(event: string, listener: Function): this;
 	server: net.Server
 }
@@ -213,7 +185,7 @@ class HekrDispatcher extends events.EventEmitter{
 				var response = "";
 				
 				if (msgObj.action == "devLogin"){
-					response = onDevLogin(msgObj, config)
+					response = this.onDevLogin(msgObj, config)
 				}else if (msgObj.action == "reportDevInfo"){
 					response = onReportDevInfo(msgObj)
 				}else if (msgObj.action == "getTimerList"){
@@ -249,7 +221,37 @@ class HekrDispatcher extends events.EventEmitter{
 	
 	}
 
-	onDevSend(data:HekrMessage){
+	private onDevLogin(data:HekrMessage, config: any) {
+		/*{
+		  "msgId": 0,
+		  "action": "devLogin",
+		  "params": {
+			"license": "30bc52f9c8fc4eada019bfffb956226c",
+			"devTid": "ESP_2M_F4CFA2492863",
+			"prodKey": "ccdfab3420b5f0320674f34657882e9e"
+		  }
+		}*/
+		let deviceId:string = getDeviceId(data);
+		this.emit("deviceConnected", deviceId);
+		
+		return JSON.stringify({
+			"msgId": data.msgId,
+			"action": "devLoginResp",
+			"code": 200,
+			"desc": "success",
+			"params": {
+				"devTid": deviceId,
+				"token": null,
+				"ctrlKey": config.meters[deviceId].ctrlKey,
+				"bindKey": config.meters[deviceId].bindKey,
+				"forceBind": false,
+				"bind": true,
+				"license": config.meters[deviceId].license
+			}
+		})
+	}
+
+	private onDevSend(data:HekrMessage){
 		/*{
 			"msgId": 18486,
 			"action": "devSend",
