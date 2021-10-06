@@ -15,6 +15,6 @@ const dispatcher = new hekr.HekrDispatcher(config)
 
 import {MqttHassPublisher} from './mqtt'
 const mqtt = new MqttHassPublisher(config)
-dispatcher.on('data', mqtt.publishVoltage)
+dispatcher.on('data', (data) => mqtt.publishVoltage(data))
 
 

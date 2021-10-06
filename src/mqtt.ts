@@ -50,6 +50,7 @@ export class MqttHassPublisher{
 	}
 
 	private publishConfig(deviceId:string){
+		console.debug("Publishing config for", deviceId);
 		this.client.publish("hekr/state", "online");
 		function sensorConfig(deviceClass:string, uom:string, deviceName:string){
 			return {
