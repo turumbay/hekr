@@ -1,5 +1,7 @@
 import assert from 'assert/strict';
-import net from 'net'
+import net from 'net';
+import events from 'events';
+import { eventNames } from 'process';
 
 // https://docs.hekr.me/v4/%E4%BA%91%E7%AB%AFAPI/%E8%AE%BE%E5%A4%87%E9%80%9A%E4%BF%A1/
 
@@ -8,6 +10,7 @@ interface HekrMessage{
 	action: string,
 	params: any
 }
+
 let getDeviceId = (msgObj:HekrMessage) => msgObj.params.devTid;
 
 
@@ -30,11 +33,11 @@ function onDevLogin(data:HekrMessage, config: any) {
 		"params": {
 			"devTid": deviceId,
 			"token": null,
-			"ctrlKey": config.devices[deviceId].ctrlKey,
-			"bindKey": config.devices[deviceId].bindKey,
+			"ctrlKey": config.meters[deviceId].ctrlKey,
+			"bindKey": config.meters[deviceId].bindKey,
 			"forceBind": false,
 			"bind": true,
-			"license": config.devices[deviceId].license
+			"license": config.meters[deviceId].license
 		}
 	})
 }
@@ -103,29 +106,6 @@ function onGetTimerList(data:HekrMessage){
 	})
 }
 
-var onDevSend = function(mqtt:any){
-	return function(data:HekrMessage){
-		/*{
-		  "msgId": 18486,
-		  "action": "devSend",
-		  "params": {
-		    "devTid": "ESP_2M_F4CFA2492863",
-		    "appTid": [],
-		    "data": {
-		      "raw": "484301010B001FC9000000000000096800000000000000000000000000000000004C93004C9300000000000003E803E80000000013870000510F0000510F00000000DF"
-		    }
-		  }
-		}*/	
-		if (data.params.data.raw.length == 134){
-			const details = parseDevSend(data.params.data.raw);
-			console.debug(details);
-			mqtt.publishVoltage(getDeviceId(data), details)
-		}
-		return ok(data)
-	}
-}
-
-
 
 function onHeartbeat(data:HekrMessage){
 	/*{
@@ -175,74 +155,131 @@ function parseDevSend(rawData:string){
 	}
 }
 
+export interface HekrMeterData{
+	device_id: string,
+	voltage: number,
+	total_active_power: number,
+	total_reactive_power: number,
+	current: number,
+	total_energy_consumed: number
+}
 
+declare interface HekrDispatcher{
+	on(event: 'data', listener: (data: HekrMeterData) => void): this;	
+	//on(event: string, listener: Function): this;
+	server: net.Server
+}
 
-function createDispatcher(config:any, mqtt:any){
-	const dispatcher = net.createServer((socket) => {
-		console.debug('client connected to dispatcher');
+class HekrDispatcher extends events.EventEmitter{
 
-		socket.setEncoding('utf8');
+	constructor(config:any){
+		super();
 
-		var scheduler:NodeJS.Timer;
-		socket.once('data', (data) => {
-			let msgObj = JSON.parse(data.toString());
-			assert.equal(msgObj.action, "devLogin", `Initial message to dispatcher should be <devLogin>, but received <${msgObj.action}>`);
-
-			let deviceId = getDeviceId(msgObj);
-
-			function appSendRequest(){
-				socket.write(JSON.stringify({
-					"msgId": Math.round(Date.now() / 1000)  % 100000 ,
-					"action": "appSend",
-					"params": {
-						"devTid": deviceId,
-						"ctrlKey": config.devices[deviceId].ctrlKey,
-						"appTid": "25fa78bd-d78c-4b30-9e54-b9669b72e832",
-						"data": {
-							"raw": "480602350a8f"
+		const server = net.createServer((socket) => {
+			console.debug('client connected to dispatcher');
+	
+			socket.setEncoding('utf8');
+	
+			var scheduler:NodeJS.Timer;
+			socket.once('data', (data) => {
+				let msgObj = JSON.parse(data.toString());
+				assert.equal(msgObj.action, "devLogin", `Initial message to dispatcher should be <devLogin>, but received <${msgObj.action}>`);
+	
+				let deviceId = getDeviceId(msgObj);
+	
+				function appSendRequest(){
+					socket.write(JSON.stringify({
+						"msgId": Math.round(Date.now() / 1000)  % 100000 ,
+						"action": "appSend",
+						"params": {
+							"devTid": deviceId,
+							"ctrlKey": config.meters[deviceId].ctrlKey,
+							"appTid": "25fa78bd-d78c-4b30-9e54-b9669b72e832",
+							"data": {
+								"raw": "480602350a8f"
+							}
 						}
-					}
-				}) + "\n")
-			}
-			scheduler = setInterval(appSendRequest, config.updateInterval * 1000);				
-			
-		})
-
-
-		socket.on('data', (data) => {
-			console.debug("Dispatcher received request", data);
-
-			let msgObj = JSON.parse(data.toString());
-			var response = "";
-			
-			if (msgObj.action == "devLogin"){
-				response = onDevLogin(msgObj, config)
-			}else if (msgObj.action == "reportDevInfo"){
-				response = onReportDevInfo(msgObj)
-			}else if (msgObj.action == "getTimerList"){
-				response = onGetTimerList(msgObj)
-			}else if (msgObj.action == "heartbeat"){
-				response = onHeartbeat(msgObj)
-			}else if (msgObj.action == "devSend"){
-				response = onDevSend(mqtt)(msgObj)
-			}
-
-			socket.write(response); 
-			socket.write("\n");
+					}) + "\n")
+				}
+				scheduler = setInterval(appSendRequest, config.updateInterval * 1000);				
+				
+			})
+	
+	
+			socket.on('data', (data) => {
+				console.debug("Dispatcher received request", data);
+	
+				let msgObj = JSON.parse(data.toString());
+				var response = "";
+				
+				if (msgObj.action == "devLogin"){
+					response = onDevLogin(msgObj, config)
+				}else if (msgObj.action == "reportDevInfo"){
+					response = onReportDevInfo(msgObj)
+				}else if (msgObj.action == "getTimerList"){
+					response = onGetTimerList(msgObj)
+				}else if (msgObj.action == "heartbeat"){
+					response = onHeartbeat(msgObj)
+				}else if (msgObj.action == "devSend"){
+					response = this.onDevSend(msgObj)
+				}
+	
+				socket.write(response); 
+				socket.write("\n");
+			});
+	
+			socket.on('end', () => {
+				clearInterval(scheduler);
+				console.debug('client disconnected from dispatcher');
+			});
+	
+			socket.on('error', (err) => {
+				console.error("Error occurred in dispatcher: ", err)
+			});		
+	
 		});
 
-		socket.on('end', () => {
-			clearInterval(scheduler);
-			console.debug('client disconnected from dispatcher');
+		server.listen(config.dispatcherPort || 9091 , () => {
+			console.log('dispatcher bound');
 		});
+		
+		server.on('error', (err) => {
+			console.error("Something goes wrong in dispatcher", err);
+		});
+	
+	}
 
-		socket.on('error', (err) => {
-			console.error("Error occurred in dispatcher: ", err)
-		});		
+	onDevSend(data:HekrMessage){
+		/*{
+			"msgId": 18486,
+			"action": "devSend",
+			"params": {
+			"devTid": "ESP_2M_F4CFA2492863",
+			"appTid": [],
+			"data": {
+				"raw": "484301010B001FC9000000000000096800000000000000000000000000000000004C93004C9300000000000003E803E80000000013870000510F0000510F00000000DF"
+			}
+			}
+		}*/	
+		if (data.params.data.raw.length == 134){
+			const details = parseDevSend(data.params.data.raw);
+			console.debug(details);
+			let meterData:HekrMeterData = {
+				device_id: getDeviceId(data),
+				current: details.current_1,
+				voltage: details.voltage_1,
+				total_active_power: details.total_active_power,
+				total_reactive_power: details.total_reactive_power,
+				total_energy_consumed: details.total_energy_consumed
+			}
+			this.emit("data", meterData)
+		}
+		return ok(data)		
+	}
+	
 
-	});
 
-	return dispatcher;	
-} ;
+}
 
-export default {createDispatcher}
+
+export default {HekrDispatcher}

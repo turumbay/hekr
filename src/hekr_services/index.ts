@@ -1,7 +1,7 @@
 import dispatcher from './dispatcher'
-import balancer from './balancer'
+import * as balancer from './balancer'
 
-const createBalancer = balancer.createBalancer
-const createDispatcher = dispatcher.createDispatcher
+const HekrBalancer = balancer.HekrBalancer
+const HekrDispatcher = dispatcher.HekrDispatcher
 
-export default {createBalancer, createDispatcher}
+export default {HekrBalancer, HekrDispatcher}

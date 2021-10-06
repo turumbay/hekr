@@ -7,23 +7,14 @@ const config = (function(){
 })();
 
 import hekr from './hekr_services/index'
-import mqtt from './mqtt'
-
-const balancer = hekr.createBalancer(config)
-balancer.listen(config.balancerPort || 9092, () => {
-  console.log('balancer bound');
-});
-balancer.on('error', (err) => {
-  console.error("Something goes wrong in balancer", err);
-});
 
 
-const dispatcher = hekr.createDispatcher(config, mqtt);
-dispatcher.listen(config.dispatcherPort || 9091 , () => {
-  console.log('dispatcher bound');
-});
+const balancer = new hekr.HekrBalancer(config)
 
-dispatcher.on('error', (err) => {
-  console.error("Something goes wrong in dispatcher", err);
-});
+const dispatcher = new hekr.HekrDispatcher(config)
+
+import {MqttHassPublisher} from './mqtt'
+const mqtt = new MqttHassPublisher(config)
+dispatcher.on('data', mqtt.publishVoltage)
+
 
