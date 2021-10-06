@@ -58,7 +58,7 @@ function publishVoltage(deviceId, data){
 
 }
 
-for (deviceId in config.devices){
+for (let deviceId in config.devices){
 	publishConfig(deviceId)
 }
 
