@@ -36,6 +36,9 @@ function onDevLogin(data, config) {
 }
 
 
+/**
+ * @param {{ msgId: any; action: string; }} data
+ */
 function ok(data){
 	return JSON.stringify({
 		"msgId": data.msgId,
@@ -179,9 +182,9 @@ function createDispatcher(config, mqtt){
 
 		socket.setEncoding('utf8');
 
-		let scheduler = 0;
+		var scheduler;
 		socket.once('data', (data) => {
-			let msgObj = JSON.parse(data);
+			let msgObj = JSON.parse(data.toString());
 			assert.equal(msgObj.action, "devLogin", `Initial message to dispatcher should be <devLogin>, but received <${msgObj.action}>`);
 
 			let deviceId = getDeviceId(msgObj);
@@ -215,7 +218,7 @@ function createDispatcher(config, mqtt){
 				'devSend': onDevSend(mqtt)
 			}
 
-			let msgObj = JSON.parse(data);
+			let msgObj = JSON.parse(data.toString());
 			var response = "";
 			if (router.hasOwnProperty(msgObj.action)) {
 				response = router[msgObj.action](msgObj, config)
@@ -225,9 +228,7 @@ function createDispatcher(config, mqtt){
 		});
 
 		socket.on('end', () => {
-			if (scheduler > 0){ 
-				clearInterval(scheduler) 
-			};
+			clearInterval(scheduler);
 			console.debug('client disconnected from dispatcher');
 		});
 
