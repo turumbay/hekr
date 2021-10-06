@@ -24,7 +24,15 @@ export class MqttHassPublisher{
 			password: config.mqtt.password,
 			clean:true
 		})
-		console.debug("Mqtt client connected ")
+		this.client.on('connect', () => {
+			console.debug("mqqt client connected")
+		});
+		this.client.on('disconnect', () => {
+			console.debug("mqqt client disconnected")
+		})
+		this.client.on('error', (err) => {
+			console.error("mqqt client error", err)
+		})
 		for (let deviceId in config.meters){
 			this.publishConfig(deviceId)
 		}
