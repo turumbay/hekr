@@ -16,7 +16,7 @@ export interface MqttConfig{
 export class MqttHassPublisher{
 
 	protected client: MqttClient
-	
+
 	constructor(config:MqttConfig){
 		this.client = connect("mqtt://" + config.mqtt.host,{
 			clientId:"hekr-mqtt",
@@ -24,7 +24,7 @@ export class MqttHassPublisher{
 			password: config.mqtt.password,
 			clean:true
 		})
-
+		console.debug("Mqtt client connected ")
 		for (let deviceId in config.meters){
 			this.publishConfig(deviceId)
 		}
