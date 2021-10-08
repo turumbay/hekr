@@ -1,6 +1,7 @@
-import { HekrMeterData } from './hekr_services/dispatcher';
+
 
 import { connect, MqttClient } from 'mqtt';
+import { MeterData } from './hekr/hekr';
 
 export interface Config {
 	mqtt: {
@@ -28,7 +29,7 @@ export class HassPublisher {
 	}
 
 
-	public publishVoltage(data: HekrMeterData) {
+	public publishVoltage(data: MeterData) {
 		console.debug("Publishing data to mqtt", data);
 		this.client.publish("hekr/" + data.device_id, JSON.stringify({
 			"voltage": Math.round(data.voltage * 10) / 10,

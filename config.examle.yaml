@@ -1,0 +1,26 @@
+---
+ dc: "ru"
+ area: "eu"
+ domain: "turumbay.ru"
+ serviceHost: "home.turumbay.ru"
+ servicePort: 91
+
+ dispatcherPort: 9091
+ balancerPort: 9092 
+ 
+ updateInterval: 30
+
+
+ meters:
+  ESP_2M_F4CFA2492863:
+    ctrlKey: "<meter ctrlKey>"
+    bindKey: "<meter bindKey>"
+  ESP_2M_8CAAB572029D:
+    ctrlKey: "<meter ctrlKey>"
+    bindKey: "<meter bindKey>"
+
+
+ mqtt:
+  host: "127.0.0.1"
+  username: "username"
+  password: "querty"
