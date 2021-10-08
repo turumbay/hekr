@@ -215,7 +215,8 @@ class Model extends events.EventEmitter {
         for (let id in config.meters) {
             this.meters[id] = new Meter(id, config.updateInterval, config.meters[id].ctrlKey, config.meters[id].bindKey)
             this.meters[id].on("data", (data) => this.emit("data", data))
-            this.meters[id].on("connected", (id) => this.emit("connected", id))
+            this.meters[id].on("connected", (id) => this.emit("deviceConnected", id))
+            this.meters[id].on("disconnected", (id) => this.emit("deviceDisconnected", id))
         }
     }
 
@@ -339,6 +340,7 @@ export interface MeterData {
 export declare interface Server {
     on(event: 'data', listener: (data: MeterData) => void): this;
     on(event: 'deviceConnected', listener: (device_id: string) => void): this;
+    on(event: 'deviceDisconnected', listener: (device_id: string) => void): this;
 }
 
 
@@ -356,6 +358,10 @@ export class Server extends events.EventEmitter {
 
 
         const model = new Model(config)
+        model.on("deviceConnected", (device_id) => this.emit("deviceConnected", device_id))
+        model.on("deviceDisconnected", (device_id) => this.emit("deviceDisconnected", device_id))
+        model.on('data', (data) => this.emit("data", data))
+
         const controller = createController(model)
         net
             .createServer(controller)
@@ -365,7 +371,5 @@ export class Server extends events.EventEmitter {
                 console.error("Something goes wrong in dispatcher", err);
             });
 
-        model.on("deviceConnected", (device_id) => this.emit("deviceConnected", device_id))
-        model.on('data', (data) => this.emit("data", data))
     }
 }
