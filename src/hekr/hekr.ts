@@ -305,7 +305,7 @@ const createBalancer = (config: Config) => (socket: net.Socket) => {
 function addConsoleLogging(socket: net.Socket, name: string) {
     //socket.setEncoding('utf8')
     socket.on('connect', () => console.debug(name + ": client connected"))
-    socket.on('data', (data) => console.debug(name + ': client send message ', data))
+    socket.on('data', (data) => console.debug(name + ': client send message ', data.toString()))
     socket.on('close', () => console.debug(name + ': client disconnected'))
     socket.on('error', (err) => console.error(": error occurred ", err))
 }
