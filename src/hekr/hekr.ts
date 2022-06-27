@@ -62,7 +62,7 @@ namespace fp {
 class Meter extends events.EventEmitter {
 
     connection: fp.Maybe<MeterConnection>
-    
+
 
     constructor(public id: string, public updateInterval: number, public ctrlKey: string, public bindKey: string, public license: string = "") {
         super()
@@ -250,9 +250,7 @@ const createController = (model: Model) => (socket: net.Socket) => {
         socket.write("\n")
     })
 
-    socket.on('connect', () => {
-        connection.emit("connected")
-    })
+    socket.on('connect', () => connection.emit("connected"))
 
     socket.on('data', (data) => {
         const request: HekrMessage = JSON.parse(data.toString())
@@ -260,13 +258,9 @@ const createController = (model: Model) => (socket: net.Socket) => {
         connection.sendMessage(response)
     })
 
-    socket.on('close', () => {
-        connection.emit("closed")
-    })
+    socket.on('close', () => connection.emit("closed"))
 
-    socket.on('error', (_err) => {
-        connection.emit("error")
-    })
+    socket.on('error', (_err) => connection.emit("error"))
 }
 
 
@@ -274,7 +268,6 @@ const createBalancer = (config: Config) => (socket: net.Socket) => {
     addConsoleLogging(socket, "Balancer")
 
     socket.on('data', (data) => {
-        console.debug('Dispatcher: client send message ', data)
         const request: HekrMessage = JSON.parse(data.toString())
         socket.write(JSON.stringify({
             msgId: request.msgId,
@@ -347,14 +340,11 @@ export declare interface Server {
 export class Server extends events.EventEmitter {
     constructor(config: Config) {
         super()
+
         const balancer = createBalancer(config)
-        net
-            .createServer(balancer)
-            .listen(config.balancerPort || 9092, () => {
-                console.log('Balancer bound');
-            }).on('error', (err) => {
-                console.error("Something goes wrong in balancer", err);
-            });
+        net.createServer(balancer)
+            .listen(config.balancerPort || 9092, () => console.log('Balancer bound'))
+            .on('error', (err) => console.error("Something goes wrong in balancer", err));
 
 
         const model = new Model(config)
@@ -363,13 +353,8 @@ export class Server extends events.EventEmitter {
         model.on('data', (data) => this.emit("data", data))
 
         const controller = createController(model)
-        net
-            .createServer(controller)
-            .listen(config.dispatcherPort || 9091, () => {
-                console.log('Dispatcher bound');
-            }).on('error', (err) => {
-                console.error("Something goes wrong in dispatcher", err);
-            });
-
+        net.createServer(controller)
+           .listen(config.dispatcherPort || 9091, () => console.log('Dispatcher bound'))
+           .on('error', (err) => console.error("Something goes wrong in dispatcher", err))
     }
 }

@@ -42,12 +42,12 @@ export class HassPublisher {
 
 	public publishConfig(deviceId: string) {
 		console.debug("Publishing config to mqtt", deviceId);
-		this.client.publish("hekr/state", "online");
+		
 		function sensorConfig(deviceClass: string, uom: string, deviceName: string) {
 			return JSON.stringify({
 				"availability": [
 					{
-						"topic": "hekr/state"
+						"topic": "hekr/" + deviceId + "/state"
 					}
 				],
 				"device": {
@@ -73,6 +73,6 @@ export class HassPublisher {
 		this.client.publish("homeassistant/sensor/" + deviceId + "/reactive_power/config", sensorConfig("power", "kW", "reactive_power"));
 		this.client.publish("homeassistant/sensor/" + deviceId + "/current/config", sensorConfig("current", "A", "current"));
 		this.client.publish("homeassistant/sensor/" + deviceId + "/energy/config", sensorConfig("energy", "kWh", "energy"));
-
+		this.client.publish("hekr/" + deviceId + "/state", "online");
 	}
 }
